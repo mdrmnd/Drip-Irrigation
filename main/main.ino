@@ -16,6 +16,7 @@ PubSubClient client(espClient);
 
 // Incoming Topic
 #define humidityCalibrate "dripSystem/calibrateHumidity"
+#define userInPumpState   "dripSystem/userInPumpState"
 
 
 #define led  2  //Built in LED
@@ -23,18 +24,30 @@ PubSubClient client(espClient);
 
 // ---------- ENTER PIN USED HERE ---------------
 // Water Level Sensor Pins
-#define trig 
-#define echo 
+#define prox_far    23
+#define prox_close  22
 
 // Soil Moisture Pins
-#define soilData
+#define soilPin    32
 
 // Relays Pins
-#define pumpRelay
-#define valveRelay
+#define pumpRelay   1
+#define valveRelay  3
+
+// ---------- TIMING VARIABLE ---------------
+unsigned long currTime = 0;
+unsigned long sendDelay = 1000;
+
+
+float waterLevel;
+float moisture = 0;
+int moistureThreshold = 60;
+bool pumpState = 0;
+
 
 void topicsSubscribe() {
   client.subscribe(humidityCalibrate);
+  client.subscribe(userInPumpState);
 }
 
 void mqttCallback(char* topic, byte* message, unsigned int length) {
@@ -43,11 +56,18 @@ void mqttCallback(char* topic, byte* message, unsigned int length) {
   Serial.print(". Message: ");
   String messageTemp;
   for (int i = 0; i < length; i++) {
-    Serial.print((char)message[i]);
+    // Serial.print((char)message[i]);
     messageTemp += (char)message[i];
   }
-  Serial.println();
-  Serial.println(messageTemp);
+  // Serial.println();
+  // Serial.println(messageTemp);
+
+  if (topic == humidityCalibrate) {
+    moistureThreshold = (int) messaageTemp;
+  }
+  else if(topic == userInPumpState) {
+    pumpState = (int) messageTemp;
+  }
 }
 
 void reconnect() {
@@ -76,6 +96,13 @@ void reconnect() {
 }
 
 void setup() {
+  pinMode(led, OUTPUT);
+  pinMode(prox_far, INPUT);
+  pinMode(prox_close, INPUT);
+  pinMode(soilPin, INPUT);
+  pinMode(pumpRelay, OUTPUT);
+  pinMode(valveRelay, OUTPUT);
+
   Serial.begin(115200);
   Serial.println();
   // begin Wifi connect
@@ -106,12 +133,38 @@ void setup() {
     reconnect();
   }
 
-  pinMode(led, OUTPUT);
-
+  // Set Both Pump and Valve to Off
+  digitalWrite(valveRelay,0);
+  digitalWrite(pumpRelay,0);
 }
 
 void loop() {
-  
+  if (digitalRead(prox_far) == 1) {   // Turn On Valve
+    digitalWrite(valveRelay,1);
+  }
+  else if (digitalRead(prox_close)) { // Turn Off Valve
+    digitalWrite(valveRelay,0);
+  }
+
+  if (moisture < moistureThreshold) { // Turn On Pump
+    digitalWrite(pumpRelay,1);
+    pumpState = 1;
+  }
+  else {                              // Turn Off Pump
+    digitalWrite(pumpRelay,0);
+    pumpState = 0;
+  }
+
+  if (millis() > currTime + sendDelay) {
+    client.publish(humidityData, String(moisture).c_str(), true);
+    client.publish(waterLevel, String(waterLevel).c_str(), true);
+    client.publish(pumpState, String(pumpState).c_str(), true);
+    currTime = millis();
+    
+    Serial.print("Moisture: "); Serial.println(moisture);
+    Serial.print("Water Level:"); Serial.println(waterLevel);
+    Serial.print("Pump State:"); Serial.println(pumpState);
+  }
 
   client.loop();
 }
