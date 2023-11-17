@@ -39,7 +39,7 @@ unsigned long currTime = 0;
 unsigned long sendDelay = 1000;
 
 
-float waterLevel;
+float waterLevel = 0;
 float moisture = 0;
 int moistureThreshold = 60;
 bool pumpState = 0;
@@ -154,6 +154,8 @@ void loop() {
     digitalWrite(pumpRelay,0);
     pumpState = 0;
   }
+
+  waterLevel = !(digitalRead(prox_close)) & !(digitalRead(prox_far));
 
   if (millis() > currTime + sendDelay) {
     client.publish(humidityData, String(moisture).c_str(), true);
