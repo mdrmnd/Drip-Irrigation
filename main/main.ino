@@ -169,11 +169,11 @@ void setup() {
 
 void loop() {
   // Testing Purposes
-  moisture1 = 0; moisture2 = 0; waterLevel = 0;
+  // moisture1 = 0; moisture2 = 0; waterLevel = 0;
 
   // Moisture Sensor
-  // moisture1 = read_moisture(0.0, 100.0, soil1Pin); // Main to Be used for activating pump
-  // moisture2 = read_moisture(0.0, 100.0, soil2Pin);
+  moisture1 = read_moisture(0.0, 100.0, soil1Pin); // Main to Be used for activating pump
+  moisture2 = read_moisture(0.0, 100.0, soil2Pin);
 
   // =============== PUMP ===============
   // Condition for Pump 
@@ -195,7 +195,7 @@ void loop() {
   // Proximity Sensor Note : 
   // 0 => level < sensor threshold (LED ON)
   // 1 => level > sensor threshold (LED OFF)
-  // waterLevel = digitalRead(prox_close) or digitalRead(prox_far);
+  waterLevel = digitalRead(prox_close) or digitalRead(prox_far);
 
   // =============== Valve ===============
   // Condition for Valve
