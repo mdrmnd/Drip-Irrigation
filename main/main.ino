@@ -208,7 +208,7 @@ void loop() {
   // Output Pump Relay (Normally Close)
   // 0 => Valve OFF
   // 1 => Vlave ON
-  digitalWrite(pumpRelay, valveState);
+  digitalWrite(valveRelay, valveState);
 
   
 
@@ -235,6 +235,7 @@ void loop() {
 
 float read_moisture(float min, float max, uint8_t pinName) {
   float val = analogRead(pinName);
+  val = 4095 - val;
   float result = (max - min)/(4096.0-0.0) * val + min;
   return result;
 }
